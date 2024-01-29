@@ -21,6 +21,17 @@ class UserController extends Controller
         return response()->json(compact('user', 'recipes', 'followers', 'following'));
     }
 
+
+     // List all users
+     public function listUsers()
+     {
+         // Fetch all users from the database
+         $users = User::all();
+ 
+         // Return a JSON response with the list of users
+         return response()->json(['users' => $users]);
+     }
+
     // Update user profile
     public function update(User $user)
     {
@@ -33,21 +44,21 @@ class UserController extends Controller
         return response()->json(['message' => 'Profile updated successfully']);
     }
 
-    // Follow user
-    public function follow(User $user)
-    {
-        auth()->user()->following()->attach($user);
+// Follow user
+public function follow(User $user)
+{
+    auth()->user()->following()->attach($user);
 
-        return response()->json(['message' => 'You are now following ' . $user->name]);
-    }
+    return response()->json(['message' => 'You are now following ' . $user->name]);
+}
 
-    // Unfollow user
-    public function unfollow(User $user)
-    {
-        auth()->user()->following()->detach($user);
+// Unfollow user
+public function unfollow(User $user)
+{
+    auth()->user()->following()->detach($user);
 
-        return response()->json(['message' => 'You have unfollowed ' . $user->name]);
-    }
+    return response()->json(['message' => 'You have unfollowed ' . $user->name]);
+}
 
     // Display user's uploaded recipes
     public function recipes(User $user)
@@ -88,23 +99,56 @@ class UserController extends Controller
         return response()->json(['message' => 'Recipe rated successfully']);
     }
 
-    //Activity
-    public function activityFeed(Request $request)
+//     //Activity
+//     public function activityFeed(Request $request)
+// {
+//     $user = auth()->user();
+//     $following = $user->following()->pluck('users.id'); // Specify the table name for the id column
+
+//     // Set the page number based on the request or default to 1
+//     $page = $request->input('page', 1);
+
+//     // Set the number of items to retrieve per page
+//     $perPage = 10;
+
+//     // Retrieve paginated activities from users the authenticated user is following
+//     $activities = Activities::whereIn('user_id', $following)->with('recipe','recipe.images')
+//         ->latest()
+//         ->paginate($perPage, ['*'], 'page', $page);
+
+//     return response()->json(['activities' => $activities]);
+// }
+
+public function activityFeed(Request $request)
 {
     $user = auth()->user();
-    $following = $user->following()->pluck('users.id'); // Specify the table name for the id column
+    $following = $user->following()->pluck('users.id');
 
-    // Set the page number based on the request or default to 1
     $page = $request->input('page', 1);
-
-    // Set the number of items to retrieve per page
     $perPage = 10;
 
     // Retrieve paginated activities from users the authenticated user is following
-    $activities = Activities::whereIn('user_id', $following)->with('recipe','recipe.images')
+    $activities = Activities::whereIn('user_id', $following)
+        ->with('recipe', 'recipe.images') // Load recipe and images relationship
         ->latest()
         ->paginate($perPage, ['*'], 'page', $page);
 
+    // Append the image URLs to the response
+    foreach ($activities as $activity) {
+        $activity->recipe->images = $this->getImageUrls($activity->recipe->images);
+    }
+
     return response()->json(['activities' => $activities]);
+}
+
+private function getImageUrls($images)
+{
+    return $images->map(function ($image) {
+        return [
+            'id' => $image->id,
+            'url' => Storage::url("uploads/{$image->filename}"),
+            // Add any other relevant image information
+        ];
+    });
 }
 }

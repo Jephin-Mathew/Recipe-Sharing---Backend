@@ -1,9 +1,11 @@
 <?php
 
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\RecipeImage;
+
 
 class FileController extends Controller
 {
@@ -17,16 +19,18 @@ class FileController extends Controller
     {
         // Validate the request
         $request->validate([
-            'file' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust the validation rules based on your needs
+            'file' => 'required|image|mimes:jpeg,png,jpg,gif|max:100000',
+            'recipe_id' => 'required|exists:recipes,id', // Ensure recipe_id exists in the recipes table
         ]);
 
         // Store the file
         $file = $request->file('file');
         $filename = time() . '_' . $file->getClientOriginalName();
-        $path = $file->storeAs('uploads', $filename); // Assumes you have 'public/uploads' as your storage path
+        $path = $file->storeAs('uploads', $filename,'public'); 
+
         // Save the file information to the database
         $recipeImage = RecipeImage::create([
-            'recipe_id' => $request->input('recipe_id'), // Assuming you have recipe_id in your request
+            'recipe_id' => $request->input('recipe_id'),
             'filename' => $filename,
         ]);
 

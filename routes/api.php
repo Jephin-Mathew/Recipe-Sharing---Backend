@@ -21,6 +21,7 @@ use App\Http\Controllers\FileController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/users', [UserController::class, 'listUsers']); 
 
 // Protected routes (require authentication)
 Route::middleware('auth:api')->group(function () {
